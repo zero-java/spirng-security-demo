@@ -24,8 +24,8 @@ public class DataBaseUserDetailsManager implements UserDetailsManager {
     @Override
     public void createUser(UserDetails user) {
         template.execute("INSERT INTO users VALUES (?,?,false)", (PreparedStatementCallback<Boolean>) ps -> {
-            ps.setString(0,user.getUsername());
-            ps.setString(1,user.getPassword());
+            ps.setString(1,user.getUsername());
+            ps.setString(2,user.getPassword());
             return  ps.execute();
         });
     }
@@ -33,9 +33,9 @@ public class DataBaseUserDetailsManager implements UserDetailsManager {
     @Override
     public void updateUser(UserDetails user) {
         template.execute("UPDATE users SET username=?,password=?,enabled=?", (PreparedStatementCallback<Boolean>) ps -> {
-            ps.setString(0,user.getUsername());
-            ps.setString(1,user.getPassword());
-            ps.setBoolean(2,true);
+            ps.setString(1,user.getUsername());
+            ps.setString(2,user.getPassword());
+            ps.setBoolean(3,true);
             return  ps.execute();
         });
     }
@@ -43,7 +43,7 @@ public class DataBaseUserDetailsManager implements UserDetailsManager {
     @Override
     public void deleteUser(String username) {
         template.execute("delete FROM users where username=?", (PreparedStatementCallback<Boolean>) ps -> {
-            ps.setString(0,username);
+            ps.setString(1,username);
             return  ps.execute();
         });
     }
@@ -51,7 +51,7 @@ public class DataBaseUserDetailsManager implements UserDetailsManager {
     @Override
     public void changePassword(String oldPassword, String newPassword) {
         template.execute("UPDATE users SET password=?", (PreparedStatementCallback<Boolean>) ps -> {
-            ps.setString(0,newPassword);
+            ps.setString(1,newPassword);
 
             return  ps.execute();
         });
@@ -60,7 +60,7 @@ public class DataBaseUserDetailsManager implements UserDetailsManager {
     @Override
     public boolean userExists(String username) {
         return template.execute("SELECT username from users where username=?", (PreparedStatementCallback<Boolean>) ps -> {
-            ps.setString(0,username);
+            ps.setString(1,username);
 
             return  !ps.executeQuery().wasNull();
         });
@@ -69,11 +69,14 @@ public class DataBaseUserDetailsManager implements UserDetailsManager {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return template.execute("select * from users where username=?", (PreparedStatementCallback<UserDetails>) ps -> {
-            ps.setString(0,username);
+            ps.setString(1,username);
             ResultSet resultSet = ps.executeQuery();
-            String username1 = resultSet.getString(0);
-            String password = resultSet.getString(1);
-            return User.withUsername(username1).password(password).build();
+            while (resultSet.next()){
+                String username1 = resultSet.getString(1);
+                String password = resultSet.getString(2);
+                return User.withUsername(username1).password(password).authorities("ROLE").build();
+            }
+           return null;
         });
     }
 }
